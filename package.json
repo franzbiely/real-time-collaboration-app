@@ -1,0 +1,22 @@
+{
+  "name": "real-time-collaboration-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "yarn dev:web",
+    "dev:web": "yarn workspace web dev",
+    "dev:api": "yarn workspace api start:dev",
+    "build": "yarn workspaces run build",
+    "build:web": "yarn workspace web build",
+    "build:api": "yarn workspace api build"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
