@@ -1,22 +1,24 @@
 {
-  "name": "real-time-collaboration-app",
+  "name": "new",
   "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.8.15",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "yarn@1.22.22",
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "scripts": {
-    "dev": "yarn dev:web",
-    "dev:web": "yarn workspace web dev",
-    "dev:api": "yarn workspace api start:dev",
-    "build": "yarn workspaces run build",
-    "build:web": "yarn workspace web build",
-    "build:api": "yarn workspace api build"
-  },
-  "devDependencies": {
-    "typescript": "^5.3.3"
-  },
-  "engines": {
-    "node": ">=20"
-  }
+  ]
 }

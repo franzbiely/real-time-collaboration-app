@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+
+## Typescript (if asked then use): 
+- Generics
+- Interfaces
+- Utility types
+- Type-safe APIs
+
+## API fetching (if asked then use): 
+- Tanstack 
+- useQuery
+- useMutation
+
+## CSS (if asked then use): 
+- Tailwind
+
+## State Management (if asked then use): 
+- Zustand
+
+## Testing (if asked then use): 
+- Jest (unit testing)
+- React Testing Libraries (Integration Test)
+- Cypress (E2E - but will be separate repo).
