@@ -1,159 +1,251 @@
-# Turborepo starter
+# Real-Time Collaborative Notes
 
-This Turborepo starter is maintained by the Turborepo core team.
+A **Notion-style real-time collaboration application** where multiple users can edit notes simultaneously with live updates, presence indicators, and autosave.
 
-## Using this example
+This project demonstrates modern **full-stack architecture**, real-time systems using **WebSockets**, and scalable application design using **React, Next.js, NestJS, and MongoDB**.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## 🚀 Live Demo
+
+**Frontend (Vercel)**
+👉 https://YOUR_VERCEL_LINK
+
+---
+
+## 🧠 Overview
+
+Real-Time Collaborative Notes is a full-stack web application that allows multiple users to work on the same document simultaneously.
+
+The system uses **WebSockets (Socket.io)** to synchronize document changes between clients in real time. It also tracks active users in a document and automatically saves updates to the database.
+
+The goal of this project is to demonstrate:
+
+* Real-time application architecture
+* WebSocket-based collaboration
+* Full-stack TypeScript development
+* Scalable backend design
+* Modern React patterns
+
+This project is suitable for demonstrating **system design and realtime state synchronization**.
+
+---
+
+## ✨ Features
+
+### 📝 Collaborative Editing
+
+Multiple users can edit the same note simultaneously and see updates in real time.
+
+### 👥 Presence Indicators
+
+Shows which users are currently viewing or editing the note.
+
+### ⚡ Real-Time Updates
+
+Changes made by one user instantly appear on other users' screens.
+
+### 💾 Autosave
+
+Notes automatically save every few seconds to prevent data loss.
+
+### 🧠 Cursor Tracking *(optional advanced feature)*
+
+Displays cursor positions of other collaborators inside the editor.
+
+### 📂 Notes Management
+
+Users can create, edit, update, and delete notes.
+
+### 🔄 Realtime Sync via WebSockets
+
+The application uses **Socket.io rooms** to synchronize note updates between connected users.
+
+---
+
+## 🏗 Architecture
+
+This project uses a **monorepo architecture**.
+
+```
+realtime-collab-notes
+│
+├── apps
+│   ├── web      # Next.js frontend
+│   └── api      # NestJS backend
+│
+├── packages
+│   └── types    # shared TypeScript types
+│
+└── docker
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 🧩 Tech Stack
 
-### Apps and Packages
+### Frontend
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+* React
+* Next.js (App Router)
+* TypeScript
+* TailwindCSS
+* React Query
+* Socket.io Client
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### Backend
 
-### Utilities
+* NestJS
+* Socket.io
+* MongoDB
+* Mongoose
 
-This Turborepo has some additional tools already setup for you:
+### Infrastructure
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+* Vercel (Frontend)
+* Docker (Backend deployment)
+* MongoDB Atlas (Database)
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## 🔄 Real-Time Collaboration Flow
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+1. User opens a note
+2. Client connects to the WebSocket server
+3. Client joins a **note room**
+4. When a user edits content:
 
-```sh
-cd my-turborepo
-turbo build
+```
+Client -> emit "edit-note"
+Server -> broadcast update
+Other clients -> update editor
 ```
 
-Without global `turbo`, use your package manager:
+This ensures **instant synchronization between all connected users**.
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+---
+
+## 🖥 Local Development
+
+### 1️⃣ Clone Repository
+
+```
+git clone https://github.com/YOUR_GITHUB/realtime-collab-notes.git
+
+cd realtime-collab-notes
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+### 2️⃣ Install Dependencies
 
-```sh
-turbo build --filter=docs
+```
+npm install
 ```
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+### 3️⃣ Start MongoDB
+
+Using Docker:
+
+```
+docker run -d -p 27017:27017 --name realtime-notes mongo
 ```
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+### 4️⃣ Setup Environment Variables
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Create `.env` inside the backend:
 
-```sh
-cd my-turborepo
-turbo dev
+```
+MONGO_URI=mongodb://localhost:27017/realtime-notes
+PORT=3001
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+### 5️⃣ Start Development Servers
+
+```
+npm run dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+This runs both:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+* Next.js frontend
+* NestJS backend
 
-```sh
-turbo dev --filter=web
+---
+
+## 🧪 Example Usage
+
+1. Open the application
+2. Create a new note
+3. Open the same note in another browser window
+4. Start typing
+5. Watch updates appear in **real-time**
+
+---
+
+## 📡 WebSocket Events
+
+### Client → Server
+
+```
+join-note
+leave-note
+edit-note
+cursor-position
 ```
 
-Without global `turbo`:
+### Server → Client
 
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```
+presence-update
+note-updated
+cursor-update
 ```
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## ⚙️ Scaling Considerations
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+For production scaling the system can be extended with:
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+* Redis adapter for Socket.io
+* Horizontal backend scaling
+* Optimistic UI updates
+* CRDT-based document synchronization
+* Conflict resolution strategies
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+---
 
-```sh
-cd my-turborepo
-turbo login
-```
+## 📈 Future Improvements
 
-Without global `turbo`, use your package manager:
+Possible enhancements include:
 
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+* Rich text editor (TipTap)
+* Authentication (JWT)
+* Version history
+* Comments & mentions
+* Collaborative cursors
+* Operational transforms / CRDT support
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+---
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+## 👨‍💻 Author
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+**Francis Albores**
 
-```sh
-turbo link
-```
+Startup founder and software engineer building scalable platforms and real-time systems.
 
-Without global `turbo`:
+GitHub:
+https://github.com/YOUR_GITHUB
 
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+---
 
-## Useful Links
+## 📜 License
 
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+MIT License
