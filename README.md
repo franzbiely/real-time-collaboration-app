@@ -102,9 +102,10 @@ realtime-collab-notes
 
 ### Infrastructure
 
-* Vercel (Frontend)
-* Docker (Backend deployment)
-* MongoDB Atlas (Database)
+* **Frontend** → [Vercel](https://vercel.com)
+* **Backend** → [Railway](https://railway.app) / [Render](https://render.com)
+* **Database** → [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+* Docker supported for backend
 
 ---
 
@@ -179,12 +180,21 @@ This runs both:
 
 ---
 
-### Deployment 
+### Deployment
 
-```
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for:
+
+* **MongoDB Atlas** – database setup and connection string
+* **Backend** – Railway or Render (env: `MONGO_URI`, `REDIS_URL`, `PORT`)
+* **Frontend** – Vercel (Root: `apps/web`, env: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`)
+
+Docker (backend):
+
+```bash
 docker build -t real-time-collab-api .
-docker run -p 3000:3000 -e REDIS_URL=redis://host.docker.internal:6379 real-time-collab-api
+docker run -p 3000:3000 -e MONGO_URI="..." -e REDIS_URL=redis://... real-time-collab-api
 ```
+
 ---
 
 ## 🧪 Example Usage
