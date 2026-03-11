@@ -16,9 +16,11 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
   const updateNote = useUpdateNote();
   const { emit, subscribe } = useSocket();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | null>(null);
 
   useEffect(() => {
     if (note) {
@@ -38,12 +40,21 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
     return unsub;
   }, [subscribe]);
 
+  const showSavedThenClear = useCallback(() => {
+    setSaveStatus('saved');
+    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+    savedTimeoutRef.current = setTimeout(() => setSaveStatus(null), 2000);
+  }, []);
+
   const persist = useCallback(
     (updates: { title?: string; content?: string }) => {
       if (!noteId) return;
-      updateNote.mutate({ id: noteId, dto: updates });
+      updateNote.mutate(
+        { id: noteId, dto: updates },
+        { onSuccess: showSavedThenClear }
+      );
     },
-    [noteId, updateNote]
+    [noteId, updateNote, showSavedThenClear]
   );
 
   const handleTitleChange = useCallback(
@@ -52,7 +63,7 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
       setTitle(next);
       emit('edit-note', { noteId, title: next });
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => persist({ title: next }), 400);
+      debounceRef.current = setTimeout(() => persist({ title: next }), 2000);
     },
     [emit, noteId, persist]
   );
@@ -63,22 +74,30 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
       setContent(next);
       emit('edit-note', { noteId, content: next });
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => persist({ content: next }), 400);
+      debounceRef.current = setTimeout(() => persist({ content: next }), 2000);
     },
     [emit, noteId, persist]
   );
 
+  useEffect(() => {
+    if (updateNote.isPending) setSaveStatus('saving');
+    else setSaveStatus((s) => (s === 'saving' ? null : s));
+  }, [updateNote.isPending]);
+
   useEffect(
     () => () => {
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     },
     []
   );
 
+  const displayStatus = updateNote.isPending ? 'saving' : saveStatus;
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Toolbar />
+        <Toolbar saveStatus={null} />
         <div className="flex-1 animate-pulse p-6">
           <div className="mb-4 h-10 rounded bg-slate-200 dark:bg-slate-700" />
           <div className="h-64 rounded bg-slate-200 dark:bg-slate-700" />
@@ -90,7 +109,7 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
   if (error || !note) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Toolbar />
+        <Toolbar saveStatus={null} />
         <div className="flex flex-1 items-center justify-center p-6">
           <p className="text-red-600 dark:text-red-400">Note not found.</p>
         </div>
@@ -100,7 +119,7 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Toolbar />
+      <Toolbar saveStatus={displayStatus} />
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2 dark:border-slate-700">
         <PresenceIndicator noteId={noteId} userId={userId} />
       </div>
