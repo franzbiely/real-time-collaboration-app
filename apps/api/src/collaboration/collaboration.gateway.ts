@@ -83,7 +83,7 @@ export class CollaborationGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('cursor-position')
   handleCursorPosition(
-    @MessageBody() payload: { noteId: string; userId: string; position: unknown },
+    @MessageBody() payload: { noteId: string; userId: string; cursorPosition: number },
     @ConnectedSocket() client: Socket,
   ) {
     const { noteId, ...rest } = payload;

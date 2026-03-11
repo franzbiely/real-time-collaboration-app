@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useNote, useUpdateNote } from '@/lib/hooks/use-notes';
 import { useSocket } from '@/hooks/useSocket';
 import { PresenceIndicator } from './PresenceIndicator';
+import { RemoteCursors } from './RemoteCursors';
 import { Toolbar } from './Toolbar';
 
 export interface NoteEditorProps {
@@ -21,6 +22,9 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | null>(null);
+  const [remoteCursors, setRemoteCursors] = useState<Record<string, number>>({});
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorEmitThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (note) {
@@ -39,6 +43,32 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
     );
     return unsub;
   }, [subscribe]);
+
+  useEffect(() => {
+    const unsubCursor = subscribe<{ userId: string; cursorPosition: number }>(
+      'cursor-position',
+      ({ userId, cursorPosition }) => {
+        setRemoteCursors((prev) => ({ ...prev, [userId]: cursorPosition }));
+      }
+    );
+    const unsubPresence = subscribe<{ noteId: string; userIds: string[] }>(
+      'presence-update',
+      (payload) => {
+        if (payload.noteId !== noteId) return;
+        setRemoteCursors((prev) => {
+          const next = { ...prev };
+          for (const id of Object.keys(next)) {
+            if (!payload.userIds.includes(id)) delete next[id];
+          }
+          return next;
+        });
+      }
+    );
+    return () => {
+      unsubCursor();
+      unsubPresence();
+    };
+  }, [subscribe, noteId]);
 
   const showSavedThenClear = useCallback(() => {
     setSaveStatus('saved');
@@ -79,6 +109,25 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
     [emit, noteId, persist]
   );
 
+  const emitCursorPosition = useCallback(() => {
+    const el = contentTextareaRef.current;
+    if (!el) return;
+    const cursorPosition = el.selectionStart;
+    if (cursorEmitThrottleRef.current) return;
+    emit('cursor-position', { noteId, userId, cursorPosition });
+    cursorEmitThrottleRef.current = setTimeout(() => {
+      cursorEmitThrottleRef.current = null;
+    }, 100);
+  }, [emit, noteId, userId]);
+
+  const handleContentSelect = useCallback(() => {
+    emitCursorPosition();
+  }, [emitCursorPosition]);
+
+  const handleContentKeyUp = useCallback(() => {
+    emitCursorPosition();
+  }, [emitCursorPosition]);
+
   useEffect(() => {
     if (updateNote.isPending) setSaveStatus('saving');
     else setSaveStatus((s) => (s === 'saving' ? null : s));
@@ -88,6 +137,7 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
     () => () => {
       if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (cursorEmitThrottleRef.current) clearTimeout(cursorEmitThrottleRef.current);
     },
     []
   );
@@ -131,12 +181,24 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
           placeholder="Title"
           className="mb-4 w-full border-0 bg-transparent text-2xl font-semibold outline-none placeholder:text-slate-400 focus:ring-0 dark:placeholder:text-slate-500"
         />
-        <textarea
-          value={content}
-          onChange={handleContentChange}
-          placeholder="Write your note…"
-          className="min-h-[40rem] w-full resize-none border-0 bg-transparent text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-slate-300 dark:placeholder:text-slate-500"
-        />
+        <div className="relative">
+          <textarea
+            ref={contentTextareaRef}
+            value={content}
+            onChange={handleContentChange}
+            onSelect={handleContentSelect}
+            onKeyUp={handleContentKeyUp}
+            onClick={handleContentSelect}
+            placeholder="Write your note…"
+            className="relative z-10 min-h-[40rem] w-full resize-none border-0 bg-transparent p-3 text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-slate-300 dark:placeholder:text-slate-500"
+          />
+          <RemoteCursors
+            content={content}
+            remoteCursors={remoteCursors}
+            textareaRef={contentTextareaRef}
+            className="z-20"
+          />
+        </div>
       </div>
     </div>
   );
