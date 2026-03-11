@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useNote, useUpdateNote, notesKeys } from '@/lib/hooks/use-notes';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { useNote, useUpdateNote } from '@/lib/hooks/use-notes';
 import { useSocket } from '@/hooks/useSocket';
 import { PresenceIndicator } from './PresenceIndicator';
 import { Toolbar } from './Toolbar';
@@ -13,11 +12,31 @@ export interface NoteEditorProps {
 }
 
 export function NoteEditor({ noteId, userId }: NoteEditorProps) {
-  const queryClient = useQueryClient();
   const { data: note, isLoading, error } = useNote(noteId);
   const updateNote = useUpdateNote();
   const { emit, subscribe } = useSocket();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title ?? '');
+      setContent(note.content ?? '');
+    }
+  }, [note?._id, note?.title, note?.content]);
+
+  useEffect(() => {
+    const unsub = subscribe<{ title?: string; content?: string }>(
+      'edit-note',
+      (edit) => {
+        if (edit.title !== undefined) setTitle(edit.title);
+        if (edit.content !== undefined) setContent(edit.content);
+      }
+    );
+    return unsub;
+  }, [subscribe]);
 
   const persist = useCallback(
     (updates: { title?: string; content?: string }) => {
@@ -27,29 +46,24 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
     [noteId, updateNote]
   );
 
-  useEffect(() => {
-    const unsub = subscribe('edit-note', () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.detail(noteId) });
-    });
-    return unsub;
-  }, [subscribe, noteId, queryClient]);
-
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const title = e.target.value;
-      emit('edit-note', { noteId, title });
+      const next = e.target.value;
+      setTitle(next);
+      emit('edit-note', { noteId, title: next });
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => persist({ title }), 400);
+      debounceRef.current = setTimeout(() => persist({ title: next }), 400);
     },
     [emit, noteId, persist]
   );
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const content = e.target.value;
-      emit('edit-note', { noteId, content });
+      const next = e.target.value;
+      setContent(next);
+      emit('edit-note', { noteId, content: next });
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => persist({ content }), 400);
+      debounceRef.current = setTimeout(() => persist({ content: next }), 400);
     },
     [emit, noteId, persist]
   );
@@ -93,13 +107,13 @@ export function NoteEditor({ noteId, userId }: NoteEditorProps) {
       <div className="flex-1 p-6">
         <input
           type="text"
-          defaultValue={note.title}
+          value={title}
           onChange={handleTitleChange}
           placeholder="Title"
           className="mb-4 w-full border-0 bg-transparent text-2xl font-semibold outline-none placeholder:text-slate-400 focus:ring-0 dark:placeholder:text-slate-500"
         />
         <textarea
-          defaultValue={note.content}
+          value={content}
           onChange={handleContentChange}
           placeholder="Write your note…"
           className="min-h-[40rem] w-full resize-none border-0 bg-transparent text-slate-700 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-slate-300 dark:placeholder:text-slate-500"
