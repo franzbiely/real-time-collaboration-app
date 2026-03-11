@@ -179,6 +179,14 @@ This runs both:
 
 ---
 
+### Deployment 
+
+```
+docker build -t real-time-collab-api .
+docker run -p 3000:3000 -e REDIS_URL=redis://host.docker.internal:6379 real-time-collab-api
+```
+---
+
 ## 🧪 Example Usage
 
 1. Open the application
@@ -249,3 +257,5 @@ https://github.com/YOUR_GITHUB
 ## 📜 License
 
 MIT License
+
+
