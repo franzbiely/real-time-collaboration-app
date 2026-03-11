@@ -26,8 +26,14 @@ export class CollaborationGateway implements OnGatewayDisconnect {
     if (entry) {
       this.removePresence(entry.noteId, entry.userId);
       this.socketToNote.delete(client.id);
-      client.to(room(entry.noteId)).emit('user-left', { userId: entry.userId });
+      this.broadcastPresence(entry.noteId);
     }
+  }
+
+  private broadcastPresence(noteId: string) {
+    const set = this.presence.get(noteId);
+    const userIds = set ? Array.from(set) : [];
+    this.server.to(room(noteId)).emit('presence-update', { noteId, userIds });
   }
 
   @SubscribeMessage('join-note')
@@ -49,7 +55,7 @@ export class CollaborationGateway implements OnGatewayDisconnect {
     client.join(r);
     this.socketToNote.set(client.id, { noteId, userId });
     this.addPresence(noteId, userId);
-    client.to(r).emit('user-joined', { userId });
+    this.broadcastPresence(noteId);
   }
 
   @SubscribeMessage('leave-note')
@@ -62,7 +68,7 @@ export class CollaborationGateway implements OnGatewayDisconnect {
     client.leave(room(noteId));
     this.removePresence(noteId, userId);
     this.socketToNote.delete(client.id);
-    client.to(room(noteId)).emit('user-left', { userId });
+    this.broadcastPresence(noteId);
   }
 
   @SubscribeMessage('edit-note')

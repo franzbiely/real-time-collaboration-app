@@ -37,39 +37,32 @@ export function PresenceIndicator({ noteId, userId }: PresenceIndicatorProps) {
   }, [noteId, userId, emit]);
 
   useEffect(() => {
-    const unsubJoin = subscribe<{ userId: string }>('user-joined', (data) => {
-      setUserIds((prev) =>
-        prev.includes(data.userId) ? prev : [...prev, data.userId]
-      );
-    });
-    const unsubLeft = subscribe<{ userId: string }>('user-left', (data) => {
-      setUserIds((prev) => prev.filter((id) => id !== data.userId));
-    });
-    return () => {
-      unsubJoin();
-      unsubLeft();
-    };
-  }, [subscribe]);
+    return subscribe<{ noteId: string; userIds: string[] }>(
+      'presence-update',
+      (payload) => {
+        if (payload.noteId === noteId) setUserIds(payload.userIds);
+      }
+    );
+  }, [subscribe, noteId]);
 
-  const displayIds = userIds.filter((id) => id !== userId);
-  if (displayIds.length === 0) return null;
+  if (userIds.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <span className="text-xs text-slate-500 dark:text-slate-400">
-        Viewing:
+        Active:
       </span>
       <div className="flex -space-x-2">
-        {displayIds.slice(0, 5).map((id) => (
+        {userIds.slice(0, 6).map((id) => (
           <div
             key={id}
-            className={`h-6 w-6 rounded-full border-2 border-white ring-1 ring-slate-200 dark:border-slate-800 dark:ring-slate-700 ${AVATAR_COLORS[hashUserId(id) % AVATAR_COLORS.length]}`}
-            title={id}
+            className={`h-7 w-7 rounded-full border-2 border-white ring-1 ring-slate-200 dark:border-slate-800 dark:ring-slate-700 ${AVATAR_COLORS[hashUserId(id) % AVATAR_COLORS.length]} ${id === userId ? 'ring-2 ring-emerald-400' : ''}`}
+            title={id === userId ? `${id} (you)` : id}
           />
         ))}
-        {displayIds.length > 5 && (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs dark:bg-slate-600">
-            +{displayIds.length - 5}
+        {userIds.length > 6 && (
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs dark:bg-slate-600">
+            +{userIds.length - 6}
           </span>
         )}
       </div>
